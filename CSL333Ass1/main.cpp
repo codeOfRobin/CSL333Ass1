@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <map>
 
 using namespace std;
 FILE *pFile;
@@ -17,8 +18,21 @@ float timeInMinutes;//time for program to finish
 vector<char> V;
 vector<string>inputStrings;
 vector<vector<int>> costMatrix;
-
+map<char,int>charToIndex;
 int sizeOfVocab,k,numberOfStrings,costOfInsertion;
+
+struct stateOfStrings
+{
+    vector<string>strings;
+    vector<int>indices;
+    float costIncurredTillNow;
+    float heuristic;
+};
+
+float costOfForcefulMatch(int i,string s1,string s2)
+{
+    return costMatrix[charToIndex[s1[i]]][charToIndex[s2[i]]];
+}
 
 void readText()
 {
@@ -91,10 +105,21 @@ void readText()
     fclose (pFile);
 }
 
+vector<stateOfStrings> generateOptions(stateOfStrings x)
+{
+    vector<stateOfStrings> ans;
+    for (int i=0; i<x.strings.size(); i++)
+    {
+//        generate costs here: TODISCUSS: don't create all strings just yet, right?
+        
+    }
+    return ans;
+}
 
 int main(int argc, const char * argv[])
 {
    
     readText();
+    
     return 0;
 }
