@@ -23,16 +23,49 @@ int sizeOfVocab,k,numberOfStrings,costOfInsertion;
 
 struct stateOfStrings
 {
-    vector<string>strings;
     vector<int>indices;
     float costIncurredTillNow;
-    float heuristic;
 };
 
-float costOfForcefulMatch(int i,string s1,string s2)
+bool validateGoal(vector<int> x)
 {
-    return costMatrix[charToIndex[s1[i]]][charToIndex[s2[i]]];
+    for (int i=0; i<x.size(); i++)
+    {
+        if (inputStrings.at(i).length()!=x.at(i))
+        {
+            return false;
+        }
+    }
+    
+    return true;
 }
+
+float costOfForcefulMatch(int i,int j,string s1,string s2)
+{
+    return costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
+}
+
+float calculateCost (stateOfStrings x,stateOfStrings y)//n2k algo, x is final, y is initial
+{
+    x.costIncurredTillNow=y.costIncurredTillNow;
+    for (int i=0; i<inputStrings.size();i++)
+    {
+        if (x.indices.at(i)!=y.indices.at(i))
+        {
+            for (int j=0; j<inputStrings.size(); j++)
+            {
+                if (i!=j)
+                {
+                    y.costIncurredTillNow+=costOfForcefulMatch(x.indices.at(i), x.indices.at(j), inputStrings.at(i), inputStrings.at(j));
+                }
+            }
+        }
+    }
+    
+    return y.costIncurredTillNow;
+    
+}
+
 
 void readText()
 {
@@ -108,7 +141,7 @@ void readText()
 vector<stateOfStrings> generateOptions(stateOfStrings x)
 {
     vector<stateOfStrings> ans;
-    for (int i=0; i<x.strings.size(); i++)
+    for (int i=0; inputStrings.size(); i++)
     {
 //        generate costs here: TODISCUSS: don't create all strings just yet, right?
         
