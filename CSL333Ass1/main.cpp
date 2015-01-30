@@ -11,6 +11,7 @@
 #include <vector>
 #include <unistd.h>
 #include <map>
+#include <stack>
 
 using namespace std;
 FILE *pFile;
@@ -20,12 +21,21 @@ vector<string>inputStrings;
 vector<vector<int>> costMatrix;
 map<char,int>charToIndex;
 int sizeOfVocab,k,numberOfStrings,costOfInsertion;
-
+float avgMisMatchCost;
 struct stateOfStrings
 {
-    vector<int>indices;
+    vector<long int>indices;
+    vector<int>charsAtIndex;
     float costIncurredTillNow;
+    
+    stateOfStrings()
+    {
+        costIncurredTillNow=0;
+    }
 };
+stateOfStrings y;
+stateOfStrings x;
+stateOfStrings goal;
 
 bool validateGoal(vector<int> x)
 {
@@ -42,29 +52,53 @@ bool validateGoal(vector<int> x)
 
 float costOfForcefulMatch(int i,int j,string s1,string s2)
 {
+
+    cout<<s1[i]<<endl<<s2[j]<<endl;
+    cout<<s1<<s2<<endl;
+    cout<<charToIndex[s1[i]]<<endl<<charToIndex[s2[j]]<<endl;
+    cout<<costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
     return costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
 }
 
-float calculateCost (stateOfStrings x,stateOfStrings y)//n2k algo, x is final, y is initial
+
+
+float calculateCost (stateOfStrings &x,stateOfStrings &y)//n2k algo, x is final, y is initial
 {
     x.costIncurredTillNow=y.costIncurredTillNow;
-    for (int i=0; i<inputStrings.size();i++)
+    
+    x.charsAtIndex.resize(inputStrings.size());
+    for (int i=0; i<inputStrings.size(); i++)
     {
-        if (x.indices.at(i)!=y.indices.at(i))
+        if (x.indices.at(i)==y.indices.at(i))
         {
-            for (int j=0; j<inputStrings.size(); j++)
-            {
-                if (i!=j)
-                {
-                    y.costIncurredTillNow+=costOfForcefulMatch(x.indices.at(i), x.indices.at(j), inputStrings.at(i), inputStrings.at(j));
-                }
-            }
+            x.charsAtIndex.at(i)=sizeOfVocab-1;
+            x.costIncurredTillNow+=3;
+        }
+        else
+        {
+            x.charsAtIndex.at(i)=charToIndex[inputStrings.at(i)[x.indices.at(i)]];
         }
     }
     
+    
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+    
+        for (int j=i+1; j<inputStrings.size(); j++)
+        {
+            if (i!=j)
+            {
+                cout<<costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
+                x.costIncurredTillNow+=costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
+            }
+        }
+    }
+  
     return y.costIncurredTillNow;
     
 }
+
+
 
 
 void readText()
@@ -104,6 +138,9 @@ void readText()
         V.push_back(*pch);
         pch = strtok (NULL," \n,");
     }
+    char const *hyphen="-";
+    sizeOfVocab++;//for a dash
+    V.push_back(*hyphen);
     
     
     numberOfStrings=atoi(pch);
@@ -118,13 +155,13 @@ void readText()
     pch = strtok (NULL," \n,");
     costOfInsertion=atof(pch);
     
-    costMatrix.resize(sizeOfVocab+1);
+    costMatrix.resize(sizeOfVocab);
     pch = strtok (NULL," \n,");
 
-    for (int i=0; i<sizeOfVocab+1; i++)
+    for (int i=0; i<sizeOfVocab; i++)
     {
-        vector<int> v(sizeOfVocab+1);
-        for (int j=0; j<sizeOfVocab+1; j++)
+        vector<int> v(sizeOfVocab);
+        for (int j=0; j<sizeOfVocab; j++)
         {
             v[j]=atoi(pch);
             pch = strtok (NULL," \n");
@@ -138,21 +175,69 @@ void readText()
     fclose (pFile);
 }
 
-vector<stateOfStrings> generateOptions(stateOfStrings x)
+
+
+
+float heuristic(stateOfStrings z)
 {
-    vector<stateOfStrings> ans;
-    for (int i=0; inputStrings.size(); i++)
+    float max=0;
+    for (int i=0; i<inputStrings.size(); i++)
     {
-//        generate costs here: TODISCUSS: don't create all strings just yet, right?
-        
+        if (goal.indices.at(i)-z.indices.at(i)>max)
+        {
+            max=goal.indices.at(i)-z.indices.at(i);
+        }
     }
-    return ans;
+    return max*avgMisMatchCost;
+}
+
+//vector<stateOfStrings> blackBox(stateOfStrings initial)
+//{
+//    
+//}
+
+
+void dfsBAndB(stateOfStrings &start,stateOfStrings &goal)//No mausam, this isn't breakfast and bed. Go away.
+{
+    stack<stateOfStrings> stackThing;
+    
+    //procedure that
 }
 
 int main(int argc, const char * argv[])
 {
    
     readText();
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+        y.indices.push_back(0);
+    }
+    
+    
+    for (int i=0; i<sizeOfVocab; i++)
+    {
+        charToIndex[V.at(i)]=i;
+    }
+    
+    for (int i=1; i<costMatrix.size(); i++)
+    {
+        for (int j=0; j<i; j++)
+        {
+            avgMisMatchCost+=costMatrix[i][j];
+        }
+    }
+    avgMisMatchCost=avgMisMatchCost/(sizeOfVocab*(sizeOfVocab-1)/2);
+    x=y;
+    x.indices.at(2)=1;
+    
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+        goal.indices.push_back(inputStrings.at(i).size());
+    }
+    calculateCost(x, y);
+    cout<<x.costIncurredTillNow;
+    
+    
     
     return 0;
 }
