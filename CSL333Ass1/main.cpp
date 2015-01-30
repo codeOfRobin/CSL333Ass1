@@ -192,7 +192,7 @@ float heuristic(stateOfStrings z)
     return max*avgMisMatchCost;
 }
 
-vector<stateOfStrings> blackBox(stateOfStrings initial)
+vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=bitManipulation
 {
     vector<stateOfStrings> x;
     return x;
@@ -203,6 +203,9 @@ bool compareHeuristics(stateOfStrings &a,stateOfStrings &b)
 {
     return heuristic(a)>heuristic(b);
 }
+
+
+
 
 void dfsBAndB(stateOfStrings &start,stateOfStrings &goal)//No mausam, this isn't breakfast and bed. Go away.
 {
