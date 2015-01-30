@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <map>
 #include <stack>
+#include <algorithm>
 
 using namespace std;
 FILE *pFile;
@@ -27,7 +28,7 @@ struct stateOfStrings
     vector<long int>indices;
     vector<int>charsAtIndex;
     float costIncurredTillNow;
-    
+    stateOfStrings *parent;
     stateOfStrings()
     {
         costIncurredTillNow=0;
@@ -37,7 +38,7 @@ stateOfStrings y;
 stateOfStrings x;
 stateOfStrings goal;
 
-bool validateGoal(vector<int> x)
+bool validateGoal(vector<long> x)
 {
     for (int i=0; i<x.size(); i++)
     {
@@ -191,17 +192,51 @@ float heuristic(stateOfStrings z)
     return max*avgMisMatchCost;
 }
 
-//vector<stateOfStrings> blackBox(stateOfStrings initial)
-//{
-//    
-//}
+vector<stateOfStrings> blackBox(stateOfStrings initial)
+{
+    vector<stateOfStrings> x;
+    return x;
+}
 
+
+bool compareHeuristics(stateOfStrings &a,stateOfStrings &b)
+{
+    return heuristic(a)>heuristic(b);
+}
 
 void dfsBAndB(stateOfStrings &start,stateOfStrings &goal)//No mausam, this isn't breakfast and bed. Go away.
 {
     stack<stateOfStrings> stackThing;
+    stateOfStrings foundGoal;
+    stateOfStrings initial;
+    stackThing.push(initial);
+    while (!stackThing.empty())
+    {
+        
+        if (validateGoal(initial.indices))
+        {
+            foundGoal=initial;
+//            foundGoal.costIncurredTillNow=calculateCost(<#stateOfStrings &x#>, <#stateOfStrings &y#>) need to discuss cost with saurav
+            
+            break;
+        }
+        stackThing.pop();
+        vector<stateOfStrings> children;
+        for (int i=0; i<children.size(); i++)
+        {
+            children.at(i).costIncurredTillNow=calculateCost(children.at(i), initial);
+        }
+//        children=blackBox(initial)
+        sort(children.begin(), children.end(), compareHeuristics);
+        
+    }
     
-    //procedure that
+    float bound=foundGoal.costIncurredTillNow;
+    //TODO:Parent bullshit
+    
+    //after this:add stuff for bounding and shit
+    
+    
 }
 
 int main(int argc, const char * argv[])
