@@ -13,6 +13,9 @@
 #include <map>
 #include <stack>
 #include <algorithm>
+#include <math.h>
+#include <functional>   // std::plus
+
 
 using namespace std;
 FILE *pFile;
@@ -28,7 +31,6 @@ struct stateOfStrings
     vector<long int>indices;
     vector<int>charsAtIndex;
     float costIncurredTillNow;
-    stateOfStrings *parent;
     stateOfStrings()
     {
         costIncurredTillNow=0;
@@ -37,6 +39,68 @@ struct stateOfStrings
 stateOfStrings y;
 stateOfStrings x;
 stateOfStrings goal;
+
+
+vector<int>binaryToIntArray(int x)
+{
+    string binary = std::bitset<64>(x).to_string(); //to binary
+    string substringed=binary.substr(64-inputStrings.size() ,inputStrings.size());
+    vector<int> y;
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+        char a=substringed.at(i);
+        y.push_back(atoi(&a));
+    }
+    
+//    cout<<y[0]<<y[1]<<y[2]<<endl;
+    return y;
+}
+
+vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=bitManipulation
+{
+    vector<stateOfStrings> x;
+    
+    long int noOfChildren=pow(2, inputStrings.size())-1;
+    for (int i=1; i<=noOfChildren; i++)
+    {
+        stateOfStrings child;
+        child.indices.resize(initial.indices.size());
+        vector<int> binaryVector=binaryToIntArray(i);
+//        transform(initial.indices.begin(), initial.indices.end(), binaryVector.begin(), child.indices.begin(),std::plus<int>());
+        
+//        for (int j=0; j<inputStrings.size(); j++)
+//        {
+//            cout<<binaryVector.at(j);
+//        }
+        
+        for (int j=0; j<inputStrings.size(); j++)
+        {
+          
+            child.indices.at(j)=initial.indices.at(j)+binaryVector.at(j);
+            long int computedSize=initial.indices.at(j)+binaryVector.at(j);
+
+        }
+        
+        bool flag=true;
+        for (int j=0; j<inputStrings.size(); j++)
+        {
+            if (inputStrings.at(j).size()<child.indices.at(j))
+            {
+                flag=false;
+            }
+        }
+        
+        if (flag)
+        {
+            x.push_back(child);
+        }
+        
+    }
+    
+    x.shrink_to_fit();
+
+    return x;
+}
 
 bool validateGoal(vector<long> x)
 {
@@ -54,10 +118,10 @@ bool validateGoal(vector<long> x)
 float costOfForcefulMatch(int i,int j,string s1,string s2)
 {
 
-    cout<<s1[i]<<endl<<s2[j]<<endl;
-    cout<<s1<<s2<<endl;
-    cout<<charToIndex[s1[i]]<<endl<<charToIndex[s2[j]]<<endl;
-    cout<<costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
+//    cout<<s1[i]<<endl<<s2[j]<<endl;
+//    cout<<s1<<s2<<endl;
+//    cout<<charToIndex[s1[i]]<<endl<<charToIndex[s2[j]]<<endl;
+//    cout<<costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
     return costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
 }
 
@@ -89,7 +153,7 @@ float calculateCost (stateOfStrings &x,stateOfStrings &y)//n2k algo, x is final,
         {
             if (i!=j)
             {
-                cout<<costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
+//                cout<<costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
                 x.costIncurredTillNow+=costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
             }
         }
@@ -104,8 +168,8 @@ float calculateCost (stateOfStrings &x,stateOfStrings &y)//n2k algo, x is final,
 
 void readText()
 {
-    char * dir = getcwd(NULL, 0);
-    cout << "Current dir: " << dir << endl;
+//    char * dir = getcwd(NULL, 0);
+//    cout << "Current dir: " << dir << endl;
     pFile = fopen ( "./input.txt" , "rb" );
     if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
     
@@ -192,11 +256,7 @@ float heuristic(stateOfStrings z)
     return max*avgMisMatchCost;
 }
 
-vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=bitManipulation
-{
-    vector<stateOfStrings> x;
-    return x;
-}
+
 
 
 bool compareHeuristics(stateOfStrings &a,stateOfStrings &b)
@@ -207,34 +267,42 @@ bool compareHeuristics(stateOfStrings &a,stateOfStrings &b)
 
 
 
-void dfsBAndB(stateOfStrings &start,stateOfStrings &goal)//No mausam, this isn't breakfast and bed. Go away.
+void dfsBAndB(stateOfStrings &start)//No mausam, this isn't breakfast and bed. Go away.
 {
     stack<stateOfStrings> stackThing;
-    stateOfStrings foundGoal;
-    stateOfStrings initial;
-    stackThing.push(initial);
+    stateOfStrings current;
+    stackThing.push(start);
+    float bound=-42;
+    current=start;
     while (!stackThing.empty())
     {
         
-        if (validateGoal(initial.indices))
+        if (validateGoal(current.indices))
         {
-            foundGoal=initial;
-//            foundGoal.costIncurredTillNow=calculateCost(<#stateOfStrings &x#>, <#stateOfStrings &y#>) need to discuss cost with saurav
-            
+            stackThing.pop();
+            current.costIncurredTillNow=calculateCost(stackThing.top(),current);
+            if (bound==-42 || current.costIncurredTillNow<=bound)
+            {
+                bound=current.costIncurredTillNow;
+            }
+
             break;
         }
-        stackThing.pop();
-        vector<stateOfStrings> children;
-        for (int i=0; i<children.size(); i++)
+        else
         {
-            children.at(i).costIncurredTillNow=calculateCost(children.at(i), initial);
+            vector<stateOfStrings> children;
+            children=blackBox(stackThing.top());
+            //TODO:in the initial run, only take hueristics into accouny
+            for (int i=0; i<children.size(); i++)
+            {
+                children.at(i).costIncurredTillNow=calculateCost(children.at(i), stackThing.top());
+            }
+            sort(children.begin(), children.end(), compareHeuristics);
         }
-//        children=blackBox(initial)
-        sort(children.begin(), children.end(), compareHeuristics);
         
     }
     
-    float bound=foundGoal.costIncurredTillNow;
+    bound=goal.costIncurredTillNow;
     //TODO:Parent bullshit
     
     //after this:add stuff for bounding and shit
@@ -273,9 +341,19 @@ int main(int argc, const char * argv[])
         goal.indices.push_back(inputStrings.at(i).size());
     }
     calculateCost(x, y);
-    cout<<x.costIncurredTillNow;
+//    cout<<x.costIncurredTillNow;
     
     
+    
+    
+    
+    
+    
+    stateOfStrings x;
+    x.indices.push_back(7);
+    x.indices.push_back(6);
+    x.indices.push_back(0);
+    blackBox(x);
     
     return 0;
 }
