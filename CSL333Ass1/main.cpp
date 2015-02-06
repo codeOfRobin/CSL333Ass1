@@ -6,7 +6,7 @@
 //  Copyright (c) 2015 Batman And Robin. All rights reserved.
 //
 
-#include <fstream>≤
+#include <fstream>//≤
 #include <iostream>
 #include <vector>
 #include <unistd.h>
@@ -14,7 +14,8 @@
 #include <stack>
 #include <algorithm>
 #include <math.h>
-#include <functional>   // std::plus
+#include <functional> 
+#include <numeric>// std::plus
 
 
 using namespace std;
@@ -26,16 +27,24 @@ vector<vector<int>> costMatrix;
 map<char,int>charToIndex;
 int sizeOfVocab,k,numberOfStrings,costOfInsertion;
 float avgMisMatchCost;
+map<vector<int>, int>indexToCostMatrix;
+vector<vector<vector<int>>> allOfTheCosts;
+
 struct stateOfStrings
 {
     vector<long int>indices;
     vector<int>charsAtIndex;
     float costIncurredTillNow;
+    bool visited;
+    vector<vector<long int>>pathTillNow;
+  
     stateOfStrings()
     {
         costIncurredTillNow=0;
+        visited=false;
     }
 };
+
 stateOfStrings y;
 stateOfStrings x;
 stateOfStrings goal;
@@ -52,11 +61,43 @@ vector<int>binaryToIntArray(int x)
         y.push_back(atoi(&a));
     }
     
-//    cout<<y[0]<<y[1]<<y[2]<<endl;
     return y;
 }
 
-vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=bitManipulation
+float calculateCost (stateOfStrings x,stateOfStrings y)//n2k algo, x is final, y is initial
+{
+    float cost_of_transition=0;
+    y.charsAtIndex.resize(inputStrings.size());
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+        if (x.indices.at(i)==y.indices.at(i))
+        {
+            y.charsAtIndex.at(i)=sizeOfVocab-1;
+            cost_of_transition+=costOfInsertion;
+        }
+        else
+        {
+            y.charsAtIndex.at(i)=charToIndex[inputStrings.at(i)[y.indices.at(i)]];
+        }
+    }
+    
+    
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+        
+        for (int j=i+1; j<inputStrings.size(); j++)
+        {
+            
+            cost_of_transition+=costMatrix[y.charsAtIndex.at(j)][y.charsAtIndex.at(i)];
+            
+        }
+    }
+    
+    return cost_of_transition;
+    
+}
+
+vector<stateOfStrings> blackBox(stateOfStrings initial)
 {
     vector<stateOfStrings> x;
     
@@ -66,19 +107,12 @@ vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcod
         stateOfStrings child;
         child.indices.resize(initial.indices.size());
         vector<int> binaryVector=binaryToIntArray(i);
-//        transform(initial.indices.begin(), initial.indices.end(), binaryVector.begin(), child.indices.begin(),std::plus<int>());
-        
-//        for (int j=0; j<inputStrings.size(); j++)
-//        {
-//            cout<<binaryVector.at(j);
-//        }
+
         
         for (int j=0; j<inputStrings.size(); j++)
         {
           
             child.indices.at(j)=initial.indices.at(j)+binaryVector.at(j);
-            long int computedSize=initial.indices.at(j)+binaryVector.at(j);
-
         }
         
         bool flag=true;
@@ -87,18 +121,19 @@ vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcod
             if (inputStrings.at(j).size()<child.indices.at(j))
             {
                 flag=false;
+                break;
             }
         }
         
         if (flag)
         {
+            child.costIncurredTillNow=initial.costIncurredTillNow+calculateCost(child, initial);
+            child.pathTillNow=initial.pathTillNow;
+            child.pathTillNow.push_back(child.indices);
             x.push_back(child);
         }
         
     }
-    
-    x.shrink_to_fit();
-    cout<<x[0].indices[0]<<x[0].indices[1]<<x[0].indices[2];
     return x;
 }
 
@@ -115,53 +150,8 @@ bool validateGoal(vector<long> x)
     return true;
 }
 
-float costOfForcefulMatch(int i,int j,string s1,string s2)
-{
-
-//    cout<<s1[i]<<endl<<s2[j]<<endl;
-//    cout<<s1<<s2<<endl;
-//    cout<<charToIndex[s1[i]]<<endl<<charToIndex[s2[j]]<<endl;
-//    cout<<costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
-    return costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
-}
 
 
-
-float calculateCost (stateOfStrings &x,stateOfStrings &y)//n2k algo, x is final, y is initial
-{
-    x.costIncurredTillNow=y.costIncurredTillNow;
-    
-    x.charsAtIndex.resize(inputStrings.size());
-    for (int i=0; i<inputStrings.size(); i++)
-    {
-        if (x.indices.at(i)==y.indices.at(i))
-        {
-            x.charsAtIndex.at(i)=sizeOfVocab-1;
-            x.costIncurredTillNow+=3;
-        }
-        else
-        {
-            x.charsAtIndex.at(i)=charToIndex[inputStrings.at(i)[x.indices.at(i)]];
-        }
-    }
-    
-    
-    for (int i=0; i<inputStrings.size(); i++)
-    {
-    
-        for (int j=i+1; j<inputStrings.size(); j++)
-        {
-            if (i!=j)
-            {
-//                cout<<costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
-                x.costIncurredTillNow+=costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
-            }
-        }
-    }
-  
-    return y.costIncurredTillNow;
-    
-}
 
 
 
@@ -169,8 +159,8 @@ float calculateCost (stateOfStrings &x,stateOfStrings &y)//n2k algo, x is final,
 void readText()
 {
 //    char * dir = getcwd(NULL, 0);
-//    cout << "Current dir: " << dir << endl;
-    pFile = fopen ( "/Users/sauravgupta/Desktop/CSL333Ass1/CSL333Ass1/input.txt" , "rb" );
+//   cout << "Current dir: " << dir << endl;
+    pFile = fopen ( "/Users/sauravgupta/Desktop/new_testcases.txt" , "rb" );
     if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
     
     // obtain file size:
@@ -243,69 +233,197 @@ void readText()
 
 
 
-float heuristic(stateOfStrings z)
+float heuristic(stateOfStrings &z)
 {
-    float max=0;
-    for (int i=0; i<inputStrings.size(); i++)
-    {
-        if (goal.indices.at(i)-z.indices.at(i)>max)
-        {
-            max=goal.indices.at(i)-z.indices.at(i);
+    int k=inputStrings.size();
+    int valueOfCost=0;
+    for (int p=0; p<k-1; p++) {
+        for (int q=p+1;q<k; q++) {
+            int indexOfRelevantMatrix = ((k-1)*p)+q-(p*(p+1)/2)-1;
+            valueOfCost+=allOfTheCosts.at(indexOfRelevantMatrix).at(z.indices.at(p)).at(z.indices.at(q));
         }
     }
-    return max*avgMisMatchCost;
+    vector<int> distanceToGoal(inputStrings.size());
+    int maximum =0;
+    for (int dummy=0; dummy<inputStrings.size(); dummy++) {
+        int distanceAtDummy = goal.indices.at(dummy)-z.indices.at(dummy);
+        distanceToGoal.at(dummy)=distanceAtDummy;
+        if (distanceAtDummy>maximum) {
+            maximum = distanceAtDummy;
+        }
+    }
+    int sumOfAll=0;
+    int sum_of_elems =accumulate(distanceToGoal.begin(),distanceToGoal.end(),0);
+    valueOfCost+=(maximum*inputStrings.size()-sum_of_elems)*costOfInsertion;
+    return valueOfCost;
 }
 
-
-
-
-bool compareHeuristics(stateOfStrings &a,stateOfStrings &b)
+int min(int a, int b)
 {
-    return heuristic(a)>heuristic(b);
+    return (a < b)? a : b;
+}
+
+void pairwiseCost() // DP algorithm for constructing pairwise matrices
+{
+   int k = inputStrings.size();
+   // int k=2;
+    int numberOfMatrices = k*(k-1)/2;
+    
+    allOfTheCosts.resize(numberOfMatrices);
+    
+    int loopCount=0;
+    for (int p=0; p<k-1; p++) {
+        for (int q=p+1; q<k; q++) {
+            int firstIndex=p;
+            int secondIndex=q;
+            vector<vector<int>>bestCostMatrix;
+            int m=inputStrings.at(firstIndex).size();
+            int n=inputStrings.at(secondIndex).size();
+            bestCostMatrix.resize(m+1);
+            
+            for (int i=m; i>=0; i--)
+            {
+                vector<int> temporary(n+1);
+                bestCostMatrix.at(i)=temporary;
+                for (int j=n; j>=0; j--)
+                {
+                    if (i == m && j == n)
+                    {
+                        bestCostMatrix.at(i).at(j) = 0;
+                    }
+                    else if (i==m && j!=n)
+                    {
+                        bestCostMatrix.at(i).at(j) = bestCostMatrix.at(i).at(j+1)+costMatrix[charToIndex[inputStrings.at(secondIndex).at(j)]][sizeOfVocab-1];//+costOfInsertion;
+                    }
+                    else if (i!=m && j==n)
+                    {
+                        bestCostMatrix.at(i).at(j) = bestCostMatrix.at(i+1).at(j)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][sizeOfVocab-1];//+costOfInsertion;
+                    }
+                    else
+                    {
+                        int diagonal = bestCostMatrix.at(i+1).at(j+1)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][charToIndex[inputStrings.at(secondIndex).at(j)]];
+                        int fromRight = bestCostMatrix.at(i+1).at(j)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][sizeOfVocab-1];
+                        int fromDown = bestCostMatrix.at(i).at(j+1)+costMatrix[charToIndex[inputStrings.at(secondIndex).at(j)]][sizeOfVocab-1];
+                        bestCostMatrix.at(i).at(j)=min(diagonal,min(fromDown,fromRight));
+                    }
+                }
+            }
+           // cout<<"bestCost: "<<bestCostMatrix.at(0).at(0)<<endl;
+            allOfTheCosts.at(loopCount)=bestCostMatrix;
+            loopCount+=1;
+           
+        }
+    }
+}
+
+void printPath(stateOfStrings &x)
+{
+    vector<int> prev;
+    vector<string> stringsOfGoal;
+    
+    vector<string> inputCopy=inputStrings;
+    for (int i=0; i<inputStrings.size(); i++)
+    {
+        prev.push_back(0);
+        stringsOfGoal.push_back("");
+    }
+    for (long int i=0;i<x.pathTillNow.size(); i++)
+    {
+        cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL STARTS HERE>>>>>>>>>>>>>>>>>>>>>\n";
+        cout<<"Bound :"<<x.costIncurredTillNow<<endl;
+        for (long int j=x.pathTillNow.at(i).size()-1 ; j>=0; j--)
+        {
+            if (prev.at(j)==x.pathTillNow[i][j])
+            {
+                stringsOfGoal.at(j).push_back('-');
+            }
+            else
+            {
+                stringsOfGoal.at(j).push_back(inputCopy.at(j).front());
+                inputCopy.at(j)=inputCopy.at(j).substr(1,inputCopy.at(j).size()-1);
+            }
+            
+        }
+        
+        for (int k=0; k<x.pathTillNow.at(i).size(); k++)
+        {
+            prev[k]=x.pathTillNow[i][k];
+        }
+        
+        for (int k=0; k<stringsOfGoal.size(); k++)
+        {
+            reverse(stringsOfGoal.at(k).begin(), stringsOfGoal.at(k).end());
+            cout<<"string number"<<i<<" "<<stringsOfGoal.at(k)<<endl;
+        }
+        cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL ENDS HERE>>>>>>>>>>>>>>>>>>>>>\n";
+        
+    }
+    
 }
 
 
-
-
-void dfsBAndB(stateOfStrings &start)//No mausam, this isn't breakfast and bed. Go away.
+void dfsBAndB(stateOfStrings &start)
 {
     stack<stateOfStrings> stackThing;
     stateOfStrings current;
-    stackThing.push(start);
-    float bound=-42;
     current=start;
+    stackThing.push(current);
+   
+    float bound=11111;
+    //int numberOfNodes
+    int count=0;
     while (!stackThing.empty())
     {
+        count++;
+       // bool debug = current.visited;
+        current = stackThing.top();
+        stackThing.pop();
+      //  cout<<debug<<endl;
+        if (!current.visited){
+            
+            if (validateGoal(current.indices))
+            {
+                
+                if(current.costIncurredTillNow<bound){
+                    bound=current.costIncurredTillNow;
+//                   // cout<<bound<<endl;
+//                    cout<<"Path :"<<endl;
+//                    for (int k=0; k<current.pathTillNow.size(); k++) {
+//                        for (int dummy=0; dummy<inputStrings.size(); dummy++) {
+//                            cout<<current.pathTillNow.at(k)[dummy];
+//                        }
+//                        cout<< " Bound hai: "<<bound<<endl;
+//                    }
+                    printPath(current);
+                }
+            }
+            else
+            {
+                if((current.costIncurredTillNow+heuristic(current))<=bound){
+                    vector<stateOfStrings> children;
+                    children=blackBox(current);
+                    for (int k=0; k<children.size(); k++) {
+                        // if (!children.at(k).visited)
+                        // {
+                        stackThing.push(children.at(k));
+                        //}
+                        
+                    }
+                }
+                //vector<stateOfStrings> children;
+              //  children=blackBox(current);
+                
+                
+            }
+            current.visited=true;
+        }
+        else{
+            
+        }
         
-        if (validateGoal(current.indices))
-        {
-            stackThing.pop();
-            current.costIncurredTillNow=calculateCost(stackThing.top(),current);
-            if (bound==-42 || current.costIncurredTillNow<=bound)
-            {
-                bound=current.costIncurredTillNow;
-            }
-
-            break;
-        }
-        else
-        {
-            vector<stateOfStrings> children;
-            children=blackBox(stackThing.top());
-            //TODO:in the initial run, only take hueristics into accouny
-            for (int i=0; i<children.size(); i++)
-            {
-                children.at(i).costIncurredTillNow=calculateCost(children.at(i), stackThing.top());
-            }
-            sort(children.begin(), children.end(), compareHeuristics);
-        }
         
     }
-    
-    bound=goal.costIncurredTillNow;
-    //TODO:Parent bullshit
-    
-    //after this:add stuff for bounding and shit
+    cout<<"Number of nodes: "<<count<<endl;
     
     
 }
@@ -325,35 +443,24 @@ int main(int argc, const char * argv[])
         charToIndex[V.at(i)]=i;
     }
     
-    for (int i=1; i<costMatrix.size(); i++)
-    {
-        for (int j=0; j<i; j++)
-        {
-            avgMisMatchCost+=costMatrix[i][j];
-        }
-    }
-    avgMisMatchCost=avgMisMatchCost/(sizeOfVocab*(sizeOfVocab-1)/2);
-    x=y;
-    x.indices.at(2)=1;
     
     for (int i=0; i<inputStrings.size(); i++)
     {
         goal.indices.push_back(inputStrings.at(i).size());
     }
-    calculateCost(x, y);
-//    cout<<x.costIncurredTillNow;
-    
-    
-    
-    
-    
     
     
     stateOfStrings x;
-    x.indices.push_back(7);
-    x.indices.push_back(6);
-    x.indices.push_back(0);
-    blackBox(x);
-    
+    for (int l=0; l<inputStrings.size(); l++) {
+        x.indices.push_back(0);
+    }
+    stateOfStrings y;
+    y.indices.push_back(4);
+    y.indices.push_back(4);
+    y.indices.push_back(4);
+  
+    pairwiseCost();
+    cout<<"Heuristic from start node: "<< heuristic(x)<<endl;
+    dfsBAndB(x);
     return 0;
 }
