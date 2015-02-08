@@ -16,6 +16,8 @@
 #include <math.h>
 #include <functional> 
 #include <numeric>// std::plus
+#include <time.h>
+
 
 
 using namespace std;
@@ -29,6 +31,7 @@ int sizeOfVocab,k,numberOfStrings,costOfInsertion;
 float avgMisMatchCost;
 map<vector<int>, int>indexToCostMatrix;
 vector<vector<vector<int>>> allOfTheCosts;
+vector<vector<vector<vector<string>>>> allOfthePartialStrings;
 
 struct stateOfStrings
 {
@@ -151,11 +154,6 @@ bool validateGoal(vector<long> x)
 }
 
 
-
-
-
-
-
 void readText()
 {
 //    char * dir = getcwd(NULL, 0);
@@ -258,6 +256,11 @@ float heuristic(stateOfStrings &z)
     return valueOfCost;
 }
 
+bool compareHeuristics(stateOfStrings &a, stateOfStrings &b){
+
+    return heuristic(a)>heuristic(b);
+
+}
 int min(int a, int b)
 {
     return (a < b)? a : b;
@@ -266,50 +269,79 @@ int min(int a, int b)
 void pairwiseCost() // DP algorithm for constructing pairwise matrices
 {
    int k = inputStrings.size();
-   // int k=2;
+   //int k=2;
     int numberOfMatrices = k*(k-1)/2;
     
     allOfTheCosts.resize(numberOfMatrices);
-    
+    allOfthePartialStrings.resize(numberOfMatrices);
     int loopCount=0;
     for (int p=0; p<k-1; p++) {
         for (int q=p+1; q<k; q++) {
             int firstIndex=p;
             int secondIndex=q;
             vector<vector<int>>bestCostMatrix;
+//            vector<vector<vector<string>>> partialStringsInAPlane;
             int m=inputStrings.at(firstIndex).size();
             int n=inputStrings.at(secondIndex).size();
             bestCostMatrix.resize(m+1);
-            
+//            partialStringsInAPlane.resize(m+1);
             for (int i=m; i>=0; i--)
             {
                 vector<int> temporary(n+1);
+//                vector<vector<string>> stringsAtaColumn(n+1);
                 bestCostMatrix.at(i)=temporary;
+//                partialStringsInAPlane.at(i) = stringsAtaColumn;
                 for (int j=n; j>=0; j--)
                 {
+//                    vector<string> stringsForThisPoint(2);
+//                    partialStringsInAPlane.at(i).at(j) = stringsForThisPoint;
                     if (i == m && j == n)
                     {
                         bestCostMatrix.at(i).at(j) = 0;
+                      // partialStringsInAPlane.at(i).at(j).at(0)="";
+                      // partialStringsInAPlane.at(i).at(j).at(1)="";
                     }
                     else if (i==m && j!=n)
                     {
-                        bestCostMatrix.at(i).at(j) = bestCostMatrix.at(i).at(j+1)+costMatrix[charToIndex[inputStrings.at(secondIndex).at(j)]][sizeOfVocab-1];//+costOfInsertion;
+                        bestCostMatrix.at(i).at(j) = bestCostMatrix.at(i).at(j+1)+costMatrix[charToIndex[inputStrings.at(secondIndex).at(j)]][sizeOfVocab-1];
+                      //  partialStringsInAPlane.at(i).at(j).at(0)="-"+partialStringsInAPlane.at(i).at(j+1).at(0);
+                      //  partialStringsInAPlane.at(i).at(j).at(1)=inputStrings.at(secondIndex).at(j)+partialStringsInAPlane.at(i).at(j+1).at(1);
                     }
                     else if (i!=m && j==n)
                     {
-                        bestCostMatrix.at(i).at(j) = bestCostMatrix.at(i+1).at(j)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][sizeOfVocab-1];//+costOfInsertion;
+                        bestCostMatrix.at(i).at(j) = bestCostMatrix.at(i+1).at(j)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][sizeOfVocab-1];
+                       // partialStringsInAPlane.at(i).at(j).at(0)=inputStrings.at(firstIndex).at(i)+partialStringsInAPlane.at(i+1).at(j).at(0);
+                       // partialStringsInAPlane.at(i).at(j).at(1)="-"+partialStringsInAPlane.at(i+1).at(j).at(1);
                     }
                     else
                     {
                         int diagonal = bestCostMatrix.at(i+1).at(j+1)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][charToIndex[inputStrings.at(secondIndex).at(j)]];
-                        int fromRight = bestCostMatrix.at(i+1).at(j)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][sizeOfVocab-1];
-                        int fromDown = bestCostMatrix.at(i).at(j+1)+costMatrix[charToIndex[inputStrings.at(secondIndex).at(j)]][sizeOfVocab-1];
-                        bestCostMatrix.at(i).at(j)=min(diagonal,min(fromDown,fromRight));
+                        int fromRight = bestCostMatrix.at(i+1).at(j)+costMatrix[charToIndex[inputStrings.at(firstIndex).at(i)]][sizeOfVocab-1];//+costOfInsertion;
+                        int fromDown = bestCostMatrix.at(i).at(j+1)+costMatrix[charToIndex[inputStrings.at(secondIndex).at(j)]][sizeOfVocab-1];//+costOfInsertion;
+                        int theMinimum = min(diagonal,min(fromDown,fromRight));
+                        bestCostMatrix.at(i).at(j) = theMinimum;
+//                        if (theMinimum == fromRight) {
+//                            partialStringsInAPlane.at(i).at(j).at(0)=inputStrings.at(firstIndex).at(i)+partialStringsInAPlane.at(i+1).at(j).at(0);
+//                            partialStringsInAPlane.at(i).at(j).at(1)="-"+partialStringsInAPlane.at(i+1).at(j).at(1);
+//                        }
+//                        else if (theMinimum == fromDown){
+//                            partialStringsInAPlane.at(i).at(j).at(0)="-"+partialStringsInAPlane.at(i).at(j+1).at(0);
+//                            partialStringsInAPlane.at(i).at(j).at(1)=inputStrings.at(secondIndex).at(j)+partialStringsInAPlane.at(i).at(j+1).at(1);
+//                        }
+//                        else{
+//                            partialStringsInAPlane.at(i).at(j).at(0)=inputStrings.at(firstIndex).at(i)+partialStringsInAPlane.at(i+1).at(j+1).at(0);
+//                            partialStringsInAPlane.at(i).at(j).at(1)=inputStrings.at(secondIndex).at(j)+partialStringsInAPlane.at(i+1).at(j+1).at(1);
+//                        }
+                        
                     }
+//                    cout<<"<<<<<<<<<<<<<<Yeh raha ek point>>>>>>>>>>>>>>>"<<endl;
+//                    cout<<"bestCost at : "<<i<<" and "<<j<<" : "<<bestCostMatrix.at(i).at(j)<<endl;
+//                    cout<<"strings hain first: "<<partialStringsInAPlane.at(i).at(j).at(0)<<endl;
+//                    cout<<"strings hain second:"<<partialStringsInAPlane.at(i).at(j).at(1)<<endl;
                 }
             }
-           // cout<<"bestCost: "<<bestCostMatrix.at(0).at(0)<<endl;
             allOfTheCosts.at(loopCount)=bestCostMatrix;
+            //allOfthePartialStrings.at(loopCount)=partialStringsInAPlane;
             loopCount+=1;
            
         }
@@ -331,7 +363,7 @@ void printPath(stateOfStrings &x)
     {
         cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL STARTS HERE>>>>>>>>>>>>>>>>>>>>>\n";
         cout<<"Bound :"<<x.costIncurredTillNow<<endl;
-        for (long int j=x.pathTillNow.at(i).size()-1 ; j>=0; j--)
+        for (long int j=0 ; j<x.pathTillNow.at(i).size(); j++)
         {
             if (prev.at(j)==x.pathTillNow[i][j])
             {
@@ -352,7 +384,7 @@ void printPath(stateOfStrings &x)
         
         for (int k=0; k<stringsOfGoal.size(); k++)
         {
-            reverse(stringsOfGoal.at(k).begin(), stringsOfGoal.at(k).end());
+            //reverse(stringsOfGoal.at(k).begin(), stringsOfGoal.at(k).end());
             cout<<"string number"<<i<<" "<<stringsOfGoal.at(k)<<endl;
         }
         cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL ENDS HERE>>>>>>>>>>>>>>>>>>>>>\n";
@@ -369,7 +401,7 @@ void dfsBAndB(stateOfStrings &start)
     current=start;
     stackThing.push(current);
    
-    float bound=11111;
+    float bound=140;
     //int numberOfNodes
     int count=0;
     while (!stackThing.empty())
@@ -402,6 +434,7 @@ void dfsBAndB(stateOfStrings &start)
                 if((current.costIncurredTillNow+heuristic(current))<=bound){
                     vector<stateOfStrings> children;
                     children=blackBox(current);
+                    sort(children.begin(), children.end(), compareHeuristics);
                     for (int k=0; k<children.size(); k++) {
                         // if (!children.at(k).visited)
                         // {
@@ -430,7 +463,7 @@ void dfsBAndB(stateOfStrings &start)
 
 int main(int argc, const char * argv[])
 {
-   
+    clock_t tStart = clock();
     readText();
     for (int i=0; i<inputStrings.size(); i++)
     {
@@ -454,13 +487,11 @@ int main(int argc, const char * argv[])
     for (int l=0; l<inputStrings.size(); l++) {
         x.indices.push_back(0);
     }
-    stateOfStrings y;
-    y.indices.push_back(4);
-    y.indices.push_back(4);
-    y.indices.push_back(4);
   
     pairwiseCost();
-    cout<<"Heuristic from start node: "<< heuristic(x)<<endl;
-    dfsBAndB(x);
+  // cout<<"Heuristic from start node: "<< heuristic(x)<<endl;
+   dfsBAndB(x);
+    
+    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
     return 0;
 }
