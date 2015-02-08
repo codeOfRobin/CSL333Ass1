@@ -28,9 +28,7 @@ int sizeOfVocab,k,numberOfStrings,costOfInsertion;
 struct stateOfStrings
 {
     vector<string>stringsInState;
-    vector<long int>indices;
     float costIncurredTillNow;
-    vector<vector<int>>hyphenIndices;
     stateOfStrings()
     {
         costIncurredTillNow=0;
@@ -65,27 +63,21 @@ float costOfForcefulMatch(int i,int j,string s1,string s2)
 }
 
 
-float calculateCost (stateOfStrings x,stateOfStrings y)//n2k algo, x is final, y is initial
+float calculateCost (stateOfStrings x)//n2k algo, x is final, y is initial
 {
     float costIncurred=0;
-    if (x.stringsInState.size()!=y.stringsInState.size())
+    
+    for (int i=0; i<x.stringsInState.size()-1; i++)
     {
-        cout<<"ERROR:both states have unequal sizes. Sab Suarav ki galti hain";
-        exit(4);
-    }
-    else
-    {
-        for (int i=0; i<x.stringsInState.size(); i++)
+        for (int j=i+1; j<x.stringsInState.size(); j++)
         {
-            for (int j=i; j<y.stringsInState.size(); j++)
+            for (int k=0; k<x.stringsInState[i].size(); k++)
             {
-                for (int k=0; k<x.stringsInState[i].size(); k++)
-                {
-                    costIncurred+=costMatrix[charToIndex[x.stringsInState.at(i)[k]]][charToIndex[y.stringsInState.at(i)[k]]];
-                }
+                costIncurred+=costMatrix[charToIndex[x.stringsInState.at(i)[k]]][charToIndex[x.stringsInState.at(j)[k]]];
             }
         }
     }
+
     
     return costIncurred;
 }
@@ -168,25 +160,51 @@ void readText()
     fclose (pFile);
 }
 
-vector<stateOfStrings> sortedNeighbourHoodFunction(stateOfStrings &x)
+vector<string> allPossiblePermutations(string x)
 {
-    vector<stateOfStrings> y;
-    x.stringsInState.push_back("asdf_dsa");
-    vector<int>intVector;
-    intVector.push_back(4);
-    x.hyphenIndices.push_back(intVector);
-    srand (time(0));
-    int randomStringIndex = (rand() % (int)(x.stringsInState.size()));
-    int randomCharInSelectedString=(rand() % (int)(x.hyphenIndices[randomStringIndex].size()));
-    //hyphen to be removed
-    srand(time(0));
-    int randomIndexToPutHyphenIn=(rand() %(x.stringsInState[randomStringIndex].size()));
-    string copy=x.stringsInState[randomStringIndex];
-    copy=copy.substr(0,x.hyphenIndices[randomStringIndex][randomCharInSelectedString])+copy.substr(x.hyphenIndices[randomStringIndex][randomCharInSelectedString]+1,x.stringsInState.size()-x.hyphenIndices[randomStringIndex][randomCharInSelectedString]);
-    copy.insert(randomIndexToPutHyphenIn-1, "_");
-    x.hyphenIndices[randomStringIndex][randomCharInSelectedString]=randomIndexToPutHyphenIn;
-    x.stringsInState[randomStringIndex]=copy;
+    vector<string> y;
+    for (int i=0; i<x.size(); i++)
+    {
+        string copy=x;
+        if (i==0 && x[i]!='-')
+        {
+            
+            copy.insert(0, "-");
+            y.push_back(copy);
+           
+
+        }
+        else if (i==x.size()-1)
+        {
+            copy.push_back('-');
+            y.push_back(copy);
+            
+            
+            string copy=x;
+            
+            if (x[i]!='-')
+            {
+                copy.insert(i-1, "-");
+                y.push_back(copy);
+            }
+            
+           
+
+        }
+        else if (x[i]!='-')
+        {
+            copy.insert(i, "-");
+            y.push_back(copy);
+
+        }
+
+    }
+    for (int i=0; i<y.size(); i++)
+    {
+        cout<<y[i]<<endl;
+    }
     return y;
+
 }
 
 
@@ -195,39 +213,12 @@ int main(int argc, const char * argv[])
 {
    
     readText();
-    for (int i=0; i<inputStrings.size(); i++)
-    {
-        y.indices.push_back(0);
-    }
-    
-    
-    for (int i=0; i<sizeOfVocab; i++)
-    {
-        charToIndex[V.at(i)]=i;
-    }
-    
-
-    x=y;
-    x.indices.at(2)=1;
-    
-    for (int i=0; i<inputStrings.size(); i++)
-    {
-        goal.indices.push_back(inputStrings.at(i).size());
-    }
-    calculateCost(x, y);
-//    cout<<x.costIncurredTillNow;
-    
-    
-    
-    
-    
-    
-    
-    stateOfStrings x;
-    x.indices.push_back(7);
-    x.indices.push_back(6);
-    x.indices.push_back(0);
-    stateOfStrings y;
-    sortedNeighbourHoodFunction(y);
+    string x="A----";
+    allPossiblePermutations(x);
+    stateOfStrings a;
+    a.stringsInState.push_back("ACTG");
+    a.stringsInState.push_back("GTCA");
+    a.stringsInState.push_back("A-CG");
+    cout<<endl<<endl<<calculateCost(a);
     return 0;
 }
