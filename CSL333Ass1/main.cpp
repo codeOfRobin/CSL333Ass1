@@ -25,12 +25,12 @@ vector<string>inputStrings;
 vector<vector<int>> costMatrix;
 map<char,int>charToIndex;
 int sizeOfVocab,k,numberOfStrings,costOfInsertion;
-float avgMisMatchCost;
 struct stateOfStrings
 {
+    vector<string>stringsInState;
     vector<long int>indices;
-    vector<int>charsAtIndex;
     float costIncurredTillNow;
+    vector<vector<int>>hyphenIndices;
     stateOfStrings()
     {
         costIncurredTillNow=0;
@@ -56,112 +56,40 @@ vector<int>binaryToIntArray(int x)
     return y;
 }
 
-vector<stateOfStrings> blackBox(stateOfStrings initial)//http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=bitManipulation
-{
-    vector<stateOfStrings> x;
-    
-    long int noOfChildren=pow(2, inputStrings.size())-1;
-    for (int i=1; i<=noOfChildren; i++)
-    {
-        stateOfStrings child;
-        child.indices.resize(initial.indices.size());
-        vector<int> binaryVector=binaryToIntArray(i);
-//        transform(initial.indices.begin(), initial.indices.end(), binaryVector.begin(), child.indices.begin(),std::plus<int>());
-        
-//        for (int j=0; j<inputStrings.size(); j++)
-//        {
-//            cout<<binaryVector.at(j);
-//        }
-        
-        for (int j=0; j<inputStrings.size(); j++)
-        {
-          
-            child.indices.at(j)=initial.indices.at(j)+binaryVector.at(j);
-            long int computedSize=initial.indices.at(j)+binaryVector.at(j);
 
-        }
-        
-        bool flag=true;
-        for (int j=0; j<inputStrings.size(); j++)
-        {
-            if (inputStrings.at(j).size()<child.indices.at(j))
-            {
-                flag=false;
-            }
-        }
-        
-        if (flag)
-        {
-            x.push_back(child);
-        }
-        
-    }
-    
-    x.shrink_to_fit();
 
-    return x;
-}
-
-bool validateGoal(vector<long> x)
-{
-    for (int i=0; i<x.size(); i++)
-    {
-        if (inputStrings.at(i).length()!=x.at(i))
-        {
-            return false;
-        }
-    }
-    
-    return true;
-}
 
 float costOfForcefulMatch(int i,int j,string s1,string s2)
 {
-
-//    cout<<s1[i]<<endl<<s2[j]<<endl;
-//    cout<<s1<<s2<<endl;
-//    cout<<charToIndex[s1[i]]<<endl<<charToIndex[s2[j]]<<endl;
-//    cout<<costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
     return costMatrix[charToIndex[s1[i]]][charToIndex[s2[j]]];
 }
 
 
-
-float calculateCost (stateOfStrings &x,stateOfStrings &y)//n2k algo, x is final, y is initial
+float calculateCost (stateOfStrings x,stateOfStrings y)//n2k algo, x is final, y is initial
 {
-    x.costIncurredTillNow=y.costIncurredTillNow;
-    
-    x.charsAtIndex.resize(inputStrings.size());
-    for (int i=0; i<inputStrings.size(); i++)
+    float costIncurred=0;
+    if (x.stringsInState.size()!=y.stringsInState.size())
     {
-        if (x.indices.at(i)==y.indices.at(i))
-        {
-            x.charsAtIndex.at(i)=sizeOfVocab-1;
-            x.costIncurredTillNow+=3;
-        }
-        else
-        {
-            x.charsAtIndex.at(i)=charToIndex[inputStrings.at(i)[x.indices.at(i)]];
-        }
+        cout<<"ERROR:both states have unequal sizes. Sab Suarav ki galti hain";
+        exit(4);
     }
-    
-    
-    for (int i=0; i<inputStrings.size(); i++)
+    else
     {
-    
-        for (int j=i+1; j<inputStrings.size(); j++)
+        for (int i=0; i<x.stringsInState.size(); i++)
         {
-            if (i!=j)
+            for (int j=i; j<y.stringsInState.size(); j++)
             {
-//                cout<<costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
-                x.costIncurredTillNow+=costMatrix[x.charsAtIndex.at(j)][sizeOfVocab-1];
+                for (int k=0; k<x.stringsInState[i].size(); k++)
+                {
+                    costIncurred+=costMatrix[charToIndex[x.stringsInState.at(i)[k]]][charToIndex[y.stringsInState.at(i)[k]]];
+                }
             }
         }
     }
-  
-    return y.costIncurredTillNow;
     
+    return costIncurred;
 }
+
 
 
 
@@ -240,75 +168,28 @@ void readText()
     fclose (pFile);
 }
 
-
-
-
-float heuristic(stateOfStrings z)
+vector<stateOfStrings> sortedNeighbourHoodFunction(stateOfStrings &x)
 {
-    float max=0;
-    for (int i=0; i<inputStrings.size(); i++)
-    {
-        if (goal.indices.at(i)-z.indices.at(i)>max)
-        {
-            max=goal.indices.at(i)-z.indices.at(i);
-        }
-    }
-    return max*avgMisMatchCost;
+    vector<stateOfStrings> y;
+    x.stringsInState.push_back("asdf_dsa");
+    vector<int>intVector;
+    intVector.push_back(4);
+    x.hyphenIndices.push_back(intVector);
+    srand (time(0));
+    int randomStringIndex = (rand() % (int)(x.stringsInState.size()));
+    int randomCharInSelectedString=(rand() % (int)(x.hyphenIndices[randomStringIndex].size()));
+    //hyphen to be removed
+    srand(time(0));
+    int randomIndexToPutHyphenIn=(rand() %(x.stringsInState[randomStringIndex].size()));
+    string copy=x.stringsInState[randomStringIndex];
+    copy=copy.substr(0,x.hyphenIndices[randomStringIndex][randomCharInSelectedString])+copy.substr(x.hyphenIndices[randomStringIndex][randomCharInSelectedString]+1,x.stringsInState.size()-x.hyphenIndices[randomStringIndex][randomCharInSelectedString]);
+    copy.insert(randomIndexToPutHyphenIn-1, "_");
+    x.hyphenIndices[randomStringIndex][randomCharInSelectedString]=randomIndexToPutHyphenIn;
+    x.stringsInState[randomStringIndex]=copy;
+    return y;
 }
 
 
-
-
-bool compareHeuristics(stateOfStrings &a,stateOfStrings &b)
-{
-    return heuristic(a)>heuristic(b);
-}
-
-
-
-
-void dfsBAndB(stateOfStrings &start)//No mausam, this isn't breakfast and bed. Go away.
-{
-    stack<stateOfStrings> stackThing;
-    stateOfStrings current;
-    stackThing.push(start);
-    float bound=-42;
-    current=start;
-    while (!stackThing.empty())
-    {
-        
-        if (validateGoal(current.indices))
-        {
-            stackThing.pop();
-            current.costIncurredTillNow=calculateCost(stackThing.top(),current);
-            if (bound==-42 || current.costIncurredTillNow<=bound)
-            {
-                bound=current.costIncurredTillNow;
-            }
-
-            break;
-        }
-        else
-        {
-            vector<stateOfStrings> children;
-            children=blackBox(stackThing.top());
-            //TODO:in the initial run, only take hueristics into accouny
-            for (int i=0; i<children.size(); i++)
-            {
-                children.at(i).costIncurredTillNow=calculateCost(children.at(i), stackThing.top());
-            }
-            sort(children.begin(), children.end(), compareHeuristics);
-        }
-        
-    }
-    
-    bound=goal.costIncurredTillNow;
-    //TODO:Parent bullshit
-    
-    //after this:add stuff for bounding and shit
-    
-    
-}
 
 int main(int argc, const char * argv[])
 {
@@ -325,14 +206,7 @@ int main(int argc, const char * argv[])
         charToIndex[V.at(i)]=i;
     }
     
-    for (int i=1; i<costMatrix.size(); i++)
-    {
-        for (int j=0; j<i; j++)
-        {
-            avgMisMatchCost+=costMatrix[i][j];
-        }
-    }
-    avgMisMatchCost=avgMisMatchCost/(sizeOfVocab*(sizeOfVocab-1)/2);
+
     x=y;
     x.indices.at(2)=1;
     
@@ -353,7 +227,7 @@ int main(int argc, const char * argv[])
     x.indices.push_back(7);
     x.indices.push_back(6);
     x.indices.push_back(0);
-    blackBox(x);
-    
+    stateOfStrings y;
+    sortedNeighbourHoodFunction(y);
     return 0;
 }
