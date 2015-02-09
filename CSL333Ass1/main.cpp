@@ -17,6 +17,8 @@
 #include <functional> 
 #include <numeric>// std::plus
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -230,7 +232,7 @@ void readText()
 
 
 
-float heuristic(stateOfStrings &z)
+float heuristic(const stateOfStrings &z)
 {
     int k=inputStrings.size();
     int valueOfCost=0;
@@ -254,7 +256,7 @@ float heuristic(stateOfStrings &z)
     return valueOfCost;
 }
 
-bool compareHeuristics(stateOfStrings &a, stateOfStrings &b){
+bool compareHeuristics(const stateOfStrings &a,const stateOfStrings &b){
 
     return heuristic(a)>heuristic(b);
 
