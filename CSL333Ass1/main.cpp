@@ -22,7 +22,7 @@ FILE *pFile;
 float timeInMinutes;//time for program to finish
 vector<char> V;
 vector<string>inputStrings;
-vector<vector<int>> costMatrix;
+vector<vector<int> > costMatrix;
 map<char,int>charToIndex;
 int sizeOfVocab,k,numberOfStrings,costOfInsertion;
 struct stateOfStrings
@@ -213,6 +213,10 @@ int main(int argc, const char * argv[])
 {
    
     readText();
+    for (int i=0; i<sizeOfVocab; i++)
+    {
+        charToIndex[V.at(i)]=i;
+    }
     string x="A----";
     allPossiblePermutations(x);
     stateOfStrings a;
