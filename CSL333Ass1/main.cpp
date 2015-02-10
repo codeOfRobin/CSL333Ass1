@@ -17,7 +17,9 @@
 #include <functional> 
 #include <numeric>// std::plus
 #include <time.h>
-
+#include <bitset>
+#include <stdlib.h>
+#include <string.h>
 
 
 using namespace std;
@@ -39,11 +41,13 @@ struct stateOfStrings
     float costIncurredTillNow;
     bool visited;
     vector<vector<long int> >pathTillNow;
-  
+    float heuristicValue;
+
     stateOfStrings()
     {
         costIncurredTillNow=0;
         visited=false;
+        heuristicValue = 0;
     }
 };
 
@@ -54,7 +58,7 @@ stateOfStrings goal;
 
 vector<int>binaryToIntArray(int x)
 {
-    string binary = std::bitset<64>(x).to_string(); //to binary
+    string binary = bitset<64>(x).to_string(); //to binary
     string substringed=binary.substr(64-inputStrings.size() ,inputStrings.size());
     vector<int> y;
     for (int i=0; i<inputStrings.size(); i++)
@@ -99,18 +103,42 @@ float calculateCost (stateOfStrings x,stateOfStrings y)//n2k algo, x is final, y
     
 }
 
+float heuristic(stateOfStrings &z)
+{
+    int k=inputStrings.size();
+    int valueOfCost=0;
+    for (int p=0; p<k-1; p++) {
+        for (int q=p+1;q<k; q++) {
+            int indexOfRelevantMatrix = ((k-1)*p)+q-(p*(p+1)/2)-1;
+            valueOfCost+=allOfTheCosts.at(indexOfRelevantMatrix).at(z.indices.at(p)).at(z.indices.at(q));
+        }
+    }
+    vector<int> distanceToGoal(inputStrings.size());
+    int maximum =0;
+    for (int dummy=0; dummy<inputStrings.size(); dummy++) {
+        int distanceAtDummy = goal.indices.at(dummy)-z.indices.at(dummy);
+        distanceToGoal.at(dummy)=distanceAtDummy;
+        if (distanceAtDummy>maximum) {
+            maximum = distanceAtDummy;
+        }
+    }
+    int sum_of_elems =accumulate(distanceToGoal.begin(),distanceToGoal.end(),0);
+    valueOfCost+=(maximum*inputStrings.size()-sum_of_elems)*costOfInsertion;
+    return valueOfCost;
+}
+
 vector<stateOfStrings> blackBox(stateOfStrings initial)
 {
     vector<stateOfStrings> x;
     
     long int noOfChildren=pow(2, inputStrings.size())-1;
+    //cout<<noOfChildren;
     for (int i=1; i<=noOfChildren; i++)
     {
         stateOfStrings child;
         child.indices.resize(initial.indices.size());
         vector<int> binaryVector=binaryToIntArray(i);
-
-        
+       
         for (int j=0; j<inputStrings.size(); j++)
         {
           
@@ -132,6 +160,7 @@ vector<stateOfStrings> blackBox(stateOfStrings initial)
             child.costIncurredTillNow=initial.costIncurredTillNow+calculateCost(child, initial);
             child.pathTillNow=initial.pathTillNow;
             child.pathTillNow.push_back(child.indices);
+            child.heuristicValue = heuristic(child);
             x.push_back(child);
         }
         
@@ -225,40 +254,23 @@ void readText()
 
     // terminate
     fclose (pFile);
+
+
 }
 
 
+// bool compareHeuristics(const stateOfStrings &a, const stateOfStrings &b){
 
+//     return heuristic(a)>heuristic(b);
 
-float heuristic(stateOfStrings &z)
-{
-    int k=inputStrings.size();
-    int valueOfCost=0;
-    for (int p=0; p<k-1; p++) {
-        for (int q=p+1;q<k; q++) {
-            int indexOfRelevantMatrix = ((k-1)*p)+q-(p*(p+1)/2)-1;
-            valueOfCost+=allOfTheCosts.at(indexOfRelevantMatrix).at(z.indices.at(p)).at(z.indices.at(q));
-        }
+// }
+
+struct compareHeuristics {
+    bool operator()(const stateOfStrings& lhs, const stateOfStrings& rhs) const {
+        return lhs.heuristicValue > rhs.heuristicValue;
     }
-    vector<int> distanceToGoal(inputStrings.size());
-    int maximum =0;
-    for (int dummy=0; dummy<inputStrings.size(); dummy++) {
-        int distanceAtDummy = goal.indices.at(dummy)-z.indices.at(dummy);
-        distanceToGoal.at(dummy)=distanceAtDummy;
-        if (distanceAtDummy>maximum) {
-            maximum = distanceAtDummy;
-        }
-    }
-    int sum_of_elems =accumulate(distanceToGoal.begin(),distanceToGoal.end(),0);
-    valueOfCost+=(maximum*inputStrings.size()-sum_of_elems)*costOfInsertion;
-    return valueOfCost;
-}
+};
 
-bool compareHeuristics(stateOfStrings &a, stateOfStrings &b){
-
-    return heuristic(a)>heuristic(b);
-
-}
 int min(int a, int b)
 {
     return (a < b)? a : b;
@@ -394,7 +406,7 @@ void dfsBAndB(stateOfStrings &start)
                 if((current.costIncurredTillNow+heuristic(current))<=bound){
                     vector<stateOfStrings> children;
                     children=blackBox(current);
-                    sort(children.begin(), children.end(), compareHeuristics);
+                    sort(children.begin(), children.end(), compareHeuristics());
                     for (int k=0; k<children.size(); k++) {
                         
                         stackThing.push(children.at(k));
