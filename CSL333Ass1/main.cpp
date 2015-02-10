@@ -23,6 +23,8 @@
 
 
 using namespace std;
+
+
 FILE *pFile;
 float timeInMinutes;//time for program to finish
 vector<char> V;
@@ -182,11 +184,11 @@ bool validateGoal(vector<long> x)
 }
 
 
-void readText()
+void readText(char* inputPath)
 {
 //    char * dir = getcwd(NULL, 0);
 //   cout << "Current dir: " << dir << endl;
-    pFile = fopen ( "./input.txt" , "rb" );
+    pFile = fopen ( inputPath , "rb" );
     if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
     
     // obtain file size:
@@ -429,7 +431,9 @@ void dfsBAndB(stateOfStrings &start)
 int main(int argc, const char * argv[])
 {
     clock_t tStart = clock();
-    readText();
+    char inputFilePath[64];
+    strcpy(inputFilePath, argv[1]);
+    readText(inputFilePath);
     for (int i=0; i<inputStrings.size(); i++)
     {
         y.indices.push_back(0);
@@ -456,13 +460,16 @@ int main(int argc, const char * argv[])
     pairwiseCost();
    dfsBAndB(x);
     printPath(finalGoal);
-    cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL STARTS HERE>>>>>>>>>>>>>>>>>>>>>\n";
+    ofstream myfile;
+    myfile.open (argv[2]);
+
     for (int k=0; k<stringsOfGoal.size(); k++)
     {
         //reverse(stringsOfGoal.at(k).begin(), stringsOfGoal.at(k).end());
-        cout<<"string number"<<k<<" "<<stringsOfGoal.at(k)<<endl;
+        myfile<<stringsOfGoal.at(k)<<endl;
     }
-    cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL ENDS HERE>>>>>>>>>>>>>>>>>>>>>\n";
+    myfile.close();
+
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
     return 0;
 }
