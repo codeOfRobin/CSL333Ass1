@@ -17,9 +17,9 @@
 #include <functional> 
 #include <numeric>// std::plus
 #include <time.h>
-#include <stdio.h>
+#include <bitset>
 #include <stdlib.h>
-
+#include <string.h>
 
 
 using namespace std;
@@ -259,31 +259,9 @@ void readText()
 }
 
 
-float heuristic(const stateOfStrings &z)
-{
-    int k=inputStrings.size();
-    int valueOfCost=0;
-    for (int p=0; p<k-1; p++) {
-        for (int q=p+1;q<k; q++) {
-            int indexOfRelevantMatrix = ((k-1)*p)+q-(p*(p+1)/2)-1;
-            valueOfCost+=allOfTheCosts.at(indexOfRelevantMatrix).at(z.indices.at(p)).at(z.indices.at(q));
-        }
-    }
-    vector<int> distanceToGoal(inputStrings.size());
-    int maximum =0;
-    for (int dummy=0; dummy<inputStrings.size(); dummy++) {
-        int distanceAtDummy = goal.indices.at(dummy)-z.indices.at(dummy);
-        distanceToGoal.at(dummy)=distanceAtDummy;
-        if (distanceAtDummy>maximum) {
-            maximum = distanceAtDummy;
-        }
-    }
-    int sum_of_elems =accumulate(distanceToGoal.begin(),distanceToGoal.end(),0);
-    valueOfCost+=(maximum*inputStrings.size()-sum_of_elems)*costOfInsertion;
-    return valueOfCost;
-}
+// bool compareHeuristics(const stateOfStrings &a, const stateOfStrings &b){
 
-bool compareHeuristics(const stateOfStrings &a,const stateOfStrings &b){
+//     return heuristic(a)>heuristic(b);
 
 // }
 
@@ -350,12 +328,15 @@ void pairwiseCost() // DP algorithm for constructing pairwise matrices
     }
 }
 
+vector<string> stringsOfGoal;
+
+
 void printPath(stateOfStrings &x)
 {
     vector<int> prev;
-    vector<string> stringsOfGoal;
     
     vector<string> inputCopy=inputStrings;
+    stringsOfGoal.clear();
     for (int i=0; i<inputStrings.size(); i++)
     {
         prev.push_back(0);
@@ -363,8 +344,6 @@ void printPath(stateOfStrings &x)
     }
     for (long int i=0;i<x.pathTillNow.size(); i++)
     {
-        cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL STARTS HERE>>>>>>>>>>>>>>>>>>>>>\n";
-        cout<<"Bound :"<<x.costIncurredTillNow<<endl;
         for (long int j=0 ; j<x.pathTillNow.at(i).size(); j++)
         {
             if (prev.at(j)==x.pathTillNow[i][j])
@@ -384,17 +363,14 @@ void printPath(stateOfStrings &x)
             prev[k]=x.pathTillNow[i][k];
         }
         
-        for (int k=0; k<stringsOfGoal.size(); k++)
-        {
-            //reverse(stringsOfGoal.at(k).begin(), stringsOfGoal.at(k).end());
-            cout<<"string number"<<i<<" "<<stringsOfGoal.at(k)<<endl;
-        }
-        cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL ENDS HERE>>>>>>>>>>>>>>>>>>>>>\n";
+        
         
     }
     
 }
 
+
+stateOfStrings finalGoal;
 
 void dfsBAndB(stateOfStrings &start)
 {
@@ -420,7 +396,7 @@ void dfsBAndB(stateOfStrings &start)
                 
                 if(current.costIncurredTillNow<bound){
                     bound=current.costIncurredTillNow;
-                    printPath(current);
+                    finalGoal=current;
                 }
             }
             else
@@ -479,7 +455,14 @@ int main(int argc, const char * argv[])
   
     pairwiseCost();
    dfsBAndB(x);
-    
+    printPath(finalGoal);
+    cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL STARTS HERE>>>>>>>>>>>>>>>>>>>>>\n";
+    for (int k=0; k<stringsOfGoal.size(); k++)
+    {
+        //reverse(stringsOfGoal.at(k).begin(), stringsOfGoal.at(k).end());
+        cout<<"string number"<<k<<" "<<stringsOfGoal.at(k)<<endl;
+    }
+    cout<<"\n<<<<<<<<<<<<<<<<<<<<GOAL ENDS HERE>>>>>>>>>>>>>>>>>>>>>\n";
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
     return 0;
 }
